@@ -1,0 +1,529 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Game 2D Top-Down</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+        
+        body {
+            margin: 0;
+            padding: 0;
+            overflow: hidden;
+            background-color: #1a1a2e;
+            color: white;
+        }
+        
+        #game-container {
+            position: relative;
+            width: 100vw;
+            height: 100vh;
+            overflow: hidden;
+        }
+        
+        #game-map {
+            position: absolute;
+            width: 2000px;
+            height: 2000px;
+            background-color: #2d5a27;
+            background-image: 
+                linear-gradient(#2d5a27 1px, transparent 1px),
+                linear-gradient(90deg, #2d5a27 1px, transparent 1px);
+            background-size: 50px 50px;
+            transform-origin: 0 0;
+            transition: transform 0.5s ease-out;
+        }
+        
+        .character {
+            position: absolute;
+            z-index: 10;
+            pointer-events: none;
+            transition: transform 0.5s ease-out;
+        }
+        
+        .player {
+            z-index: 20;
+        }
+        
+        .npc {
+            z-index: 15;
+        }
+        
+        .player-label {
+            position: absolute;
+            top: -25px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: rgba(0, 0, 0, 0.7);
+            color: white;
+            padding: 3px 8px;
+            border-radius: 10px;
+            font-size: 12px;
+            white-space: nowrap;
+            z-index: 30;
+        }
+        
+        #ui {
+            position: absolute;
+            top: 20px;
+            left: 20px;
+            background: rgba(0, 0, 0, 0.7);
+            backdrop-filter: blur(5px);
+            color: white;
+            padding: 15px;
+            border-radius: 15px;
+            z-index: 100;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.3);
+        }
+        
+        #ui h3 {
+            margin-bottom: 10px;
+            color: #ffcc00;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        
+        #ui div {
+            margin-bottom: 8px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        
+        #logout-btn {
+            position: absolute;
+            top: 20px;
+            right: 20px;
+            background: rgba(220, 53, 69, 0.8);
+            color: white;
+            border: none;
+            padding: 12px 20px;
+            border-radius: 50px;
+            cursor: pointer;
+            z-index: 100;
+            font-weight: 600;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            transition: all 0.3s;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.3);
+        }
+        
+        #logout-btn:hover {
+            background: rgba(220, 53, 69, 1);
+            transform: translateY(-3px);
+            box-shadow: 0 8px 20px rgba(0, 0, 0, 0.4);
+        }
+        
+        #instructions {
+            position: absolute;
+            bottom: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: rgba(0, 0, 0, 0.7);
+            backdrop-filter: blur(5px);
+            color: white;
+            padding: 15px;
+            border-radius: 15px;
+            z-index: 100;
+            text-align: center;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.3);
+        }
+        
+        #instructions p {
+            margin: 5px 0;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+        }
+        
+        .loading {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(26, 26, 46, 0.9);
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            z-index: 1000;
+        }
+        
+        .loading-spinner {
+            width: 50px;
+            height: 50px;
+            border: 5px solid rgba(255, 255, 255, 0.3);
+            border-radius: 50%;
+            border-top-color: #ffcc00;
+            animation: spin 1s ease-in-out infinite;
+            margin-bottom: 20px;
+        }
+        
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+    </style>
+</head>
+<body>
+    <div id="game-container">
+        <div id="loading" class="loading">
+            <div class="loading-spinner"></div>
+            <p>Đang tải game...</p>
+        </div>
+        
+        <div id="game-map"></div>
+        
+        <div id="ui">
+            <h3><i class="fas fa-info-circle"></i> Thông Tin Game</h3>
+            <div><i class="fas fa-user"></i> Vị trí: <span id="position">0, 0</span></div>
+            <div><i class="fas fa-users"></i> Người chơi: <span id="player-count">1</span></div>
+        </div>
+        
+        <button id="logout-btn">
+            <i class="fas fa-sign-out-alt"></i> Đăng Xuất
+        </button>
+        
+        <div id="instructions">
+            <p><i class="fas fa-mouse-pointer"></i> Nhấp vào bản đồ để di chuyển nhân vật</p>
+            <p><i class="fas fa-user-friends"></i> Các người chơi khác sẽ xuất hiện với email của họ</p>
+        </div>
+    </div>
+
+    <!-- Firebase SDK -->
+    <script src="https://www.gstatic.com/firebasejs/9.6.10/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.6.10/firebase-auth-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.6.10/firebase-firestore-compat.js"></script>
+    
+    <script>
+        // Firebase configuration
+        const firebaseConfig = {
+            apiKey: "AIzaSyD8J4dbeW7qqMHC8DpMhWS89qbQWrabklQ",
+            authDomain: "tlgame-51605.firebaseapp.com",
+            databaseURL: "https://tlgame-51605-default-rtdb.asia-southeast1.firebasedatabase.app",
+            projectId: "tlgame-51605",
+            storageBucket: "tlgame-51605.firebasestorage.app",
+            messagingSenderId: "992801405826",
+            appId: "1:992801405826:web:490eeab62acff57f346d9b",
+            measurementId: "G-BX4J31QDYR"
+        };
+
+        // Initialize Firebase
+        firebase.initializeApp(firebaseConfig);
+        const auth = firebase.auth();
+        const db = firebase.firestore();
+
+        // Game variables
+        const TILE_SIZE = 50; // Each tile is 50px
+        const CHARACTER_HEIGHT = 2 * TILE_SIZE; // Character height is 2 tiles
+        let currentUser = null;
+        let playerId = null;
+        let playerPosition = { x: 0, y: 0 };
+        let players = {};
+        let npcPosition = { x: 5, y: 5 };
+        let cameraAnimation = null;
+
+        // DOM elements
+        const gameContainer = document.getElementById('game-container');
+        const gameMap = document.getElementById('game-map');
+        const positionDisplay = document.getElementById('position');
+        const playerCountDisplay = document.getElementById('player-count');
+        const logoutBtn = document.getElementById('logout-btn');
+        const loadingElement = document.getElementById('loading');
+
+        // Initialize game
+        function initGame() {
+            // Check authentication
+            auth.onAuthStateChanged((user) => {
+                if (user) {
+                    currentUser = user;
+                    playerId = user.uid;
+                    setupGame();
+                } else {
+                    // Redirect to login if not authenticated
+                    window.location.href = 'login.html';
+                }
+            });
+
+            // Logout button
+            logoutBtn.addEventListener('click', () => {
+                auth.signOut().then(() => {
+                    window.location.href = 'index.html';
+                });
+            });
+        }
+
+        // Setup game
+        function setupGame() {
+            // Create player character
+            createPlayerCharacter();
+            
+            // Create NPC
+            createNPC();
+            
+            // Setup click to move
+            gameMap.addEventListener('click', handleMapClick);
+            
+            // Load initial player position
+            loadPlayerPosition();
+            
+            // Start listening for other players
+            startPlayerListener();
+            
+            // Hide loading screen
+            setTimeout(() => {
+                loadingElement.style.display = 'none';
+            }, 1000);
+        }
+
+        // Create player character
+        function createPlayerCharacter() {
+            const playerElement = document.createElement('img');
+            playerElement.src = 'https://static.vecteezy.com/system/resources/thumbnails/028/652/011/small/pixel-art-student-character-png.png';
+            playerElement.className = 'character player';
+            playerElement.id = `player-${playerId}`;
+            playerElement.style.width = 'auto';
+            playerElement.style.height = `${CHARACTER_HEIGHT}px`;
+            gameMap.appendChild(playerElement);
+            
+            // Create player label
+            const playerLabel = document.createElement('div');
+            playerLabel.className = 'player-label';
+            playerLabel.id = `player-label-${playerId}`;
+            playerLabel.textContent = currentUser.email;
+            playerElement.appendChild(playerLabel);
+            
+            // Update player position
+            updatePlayerPosition();
+        }
+
+        // Create NPC
+        function createNPC() {
+            const npcElement = document.createElement('img');
+            npcElement.src = 'https://static.vecteezy.com/system/resources/thumbnails/027/190/544/small/pixel-art-black-office-suit-man-character-2-png.png';
+            npcElement.className = 'character npc';
+            npcElement.id = 'npc';
+            npcElement.style.width = 'auto';
+            npcElement.style.height = `${CHARACTER_HEIGHT}px`;
+            gameMap.appendChild(npcElement);
+            
+            // Create NPC label
+            const npcLabel = document.createElement('div');
+            npcLabel.className = 'player-label';
+            npcLabel.textContent = 'NPC';
+            npcElement.appendChild(npcLabel);
+            
+            // Position NPC
+            positionCharacter(npcElement, npcPosition.x, npcPosition.y);
+        }
+
+        // Handle map click to move player
+        function handleMapClick(event) {
+            const rect = gameMap.getBoundingClientRect();
+            const scale = parseFloat(gameMap.style.transform?.match(/scale\(([^)]+)\)/)?.[1] || 1);
+            
+            // Calculate clicked position in game coordinates
+            const clickX = (event.clientX - rect.left) / scale;
+            const clickY = (event.clientY - rect.top) / scale;
+            
+            // Convert to tile coordinates
+            const targetX = Math.floor(clickX / TILE_SIZE);
+            const targetY = Math.floor(clickY / TILE_SIZE);
+            
+            // Move player to new position
+            movePlayer(targetX, targetY);
+        }
+
+        // Move player to new position
+        function movePlayer(x, y) {
+            playerPosition.x = x;
+            playerPosition.y = y;
+            
+            // Update player position display
+            positionDisplay.textContent = `${x}, ${y}`;
+            
+            // Update player position in DOM
+            updatePlayerPosition();
+            
+            // Save position to Firestore
+            savePlayerPosition();
+            
+            // Update camera with smooth animation
+            updateCamera();
+        }
+
+        // Update player position in DOM
+        function updatePlayerPosition() {
+            const playerElement = document.getElementById(`player-${playerId}`);
+            if (playerElement) {
+                positionCharacter(playerElement, playerPosition.x, playerPosition.y);
+            }
+        }
+
+        // Position a character at specific coordinates
+        function positionCharacter(element, x, y) {
+            // Center the character on the tile
+            const posX = x * TILE_SIZE;
+            const posY = y * TILE_SIZE - (CHARACTER_HEIGHT - TILE_SIZE); // Adjust for character height
+            
+            element.style.transform = `translate(${posX}px, ${posY}px)`;
+        }
+
+        // Update camera to follow player with smooth animation
+        function updateCamera() {
+            const containerWidth = gameContainer.clientWidth;
+            const containerHeight = gameContainer.clientHeight;
+            
+            // Calculate center position for camera
+            const centerX = playerPosition.x * TILE_SIZE + TILE_SIZE / 2;
+            const centerY = playerPosition.y * TILE_SIZE + TILE_SIZE / 2;
+            
+            // Calculate translation to center the player
+            const translateX = containerWidth / 2 - centerX;
+            const translateY = containerHeight / 2 - centerY;
+            
+            // Cancel any ongoing camera animation
+            if (cameraAnimation) {
+                clearTimeout(cameraAnimation);
+            }
+            
+            // Apply smooth transform to game map
+            gameMap.style.transition = 'transform 0.5s ease-out';
+            gameMap.style.transform = `translate(${translateX}px, ${translateY}px)`;
+            
+            // Reset transition after animation completes
+            cameraAnimation = setTimeout(() => {
+                gameMap.style.transition = '';
+            }, 500);
+        }
+
+        // Save player position to Firestore
+        function savePlayerPosition() {
+            if (!playerId) return;
+            
+            // Save current position
+            db.collection('playerPositions').doc(playerId).set({
+                x: playerPosition.x,
+                y: playerPosition.y,
+                timestamp: firebase.firestore.FieldValue.serverTimestamp(),
+                playerId: playerId,
+                email: currentUser.email
+            });
+            
+            // Keep only the 3 most recent positions per player
+            db.collection('playerPositions')
+                .where('playerId', '==', playerId)
+                .orderBy('timestamp', 'desc')
+                .get()
+                .then((snapshot) => {
+                    const batch = db.batch();
+                    let count = 0;
+                    
+                    snapshot.forEach((doc) => {
+                        if (count >= 3) {
+                            batch.delete(doc.ref);
+                        }
+                        count++;
+                    });
+                    
+                    if (count > 3) {
+                        batch.commit();
+                    }
+                });
+        }
+
+        // Load player position from Firestore
+        function loadPlayerPosition() {
+            if (!playerId) return;
+            
+            db.collection('playerPositions')
+                .doc(playerId)
+                .get()
+                .then((doc) => {
+                    if (doc.exists) {
+                        const data = doc.data();
+                        playerPosition.x = data.x;
+                        playerPosition.y = data.y;
+                        updatePlayerPosition();
+                        updateCamera();
+                    }
+                });
+        }
+
+        // Start listening for other players
+        function startPlayerListener() {
+            db.collection('playerPositions')
+                .onSnapshot((snapshot) => {
+                    const currentPlayers = {};
+                    let playerCount = 0;
+                    
+                    snapshot.forEach((doc) => {
+                        const data = doc.data();
+                        if (data.playerId !== playerId) {
+                            currentPlayers[data.playerId] = data;
+                            playerCount++;
+                            
+                            // Create or update player character
+                            createOrUpdateOtherPlayer(data.playerId, data.x, data.y, data.email);
+                        }
+                    });
+                    
+                    players = currentPlayers;
+                    playerCountDisplay.textContent = playerCount + 1; // +1 for current player
+                    
+                    // Remove players that are no longer in the database
+                    removeDisconnectedPlayers(currentPlayers);
+                });
+        }
+
+        // Create or update other player character
+        function createOrUpdateOtherPlayer(id, x, y, email) {
+            let playerElement = document.getElementById(`player-${id}`);
+            
+            if (!playerElement) {
+                playerElement = document.createElement('img');
+                playerElement.src = 'https://static.vecteezy.com/system/resources/thumbnails/028/652/011/small/pixel-art-student-character-png.png';
+                playerElement.className = 'character';
+                playerElement.id = `player-${id}`;
+                playerElement.style.width = 'auto';
+                playerElement.style.height = `${CHARACTER_HEIGHT}px`;
+                gameMap.appendChild(playerElement);
+                
+                // Create player label
+                const playerLabel = document.createElement('div');
+                playerLabel.className = 'player-label';
+                playerLabel.id = `player-label-${id}`;
+                playerLabel.textContent = email;
+                playerElement.appendChild(playerLabel);
+            }
+            
+            positionCharacter(playerElement, x, y);
+        }
+
+        // Remove disconnected players
+        function removeDisconnectedPlayers(currentPlayers) {
+            const playerElements = document.querySelectorAll('.character:not(.player):not(#npc)');
+            
+            playerElements.forEach(element => {
+                const id = element.id.replace('player-', '');
+                if (!currentPlayers[id] && id !== playerId) {
+                    element.remove();
+                }
+            });
+        }
+
+        // Initialize the game when page loads
+        window.addEventListener('load', initGame);
+    </script>
+</body>
+</html>
