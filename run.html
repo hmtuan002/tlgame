@@ -33,19 +33,28 @@
             width: 2000px;
             height: 2000px;
             background-color: #2d5a27;
-            background-image: 
-                linear-gradient(#2d5a27 1px, transparent 1px),
-                linear-gradient(90deg, #2d5a27 1px, transparent 1px);
-            background-size: 50px 50px;
             transform-origin: 0 0;
             transition: transform 0.5s ease-out;
+        }
+        
+        .tile {
+            position: absolute;
+            width: 50px;
+            height: 50px;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+        
+        .tile:hover {
+            border: 2px solid white;
+            box-shadow: 0 0 10px rgba(255, 255, 255, 0.5);
+            z-index: 5;
         }
         
         .character {
             position: absolute;
             z-index: 10;
             pointer-events: none;
-            transition: transform 0.5s ease-out;
+            transition: left 1s linear, top 1s linear;
         }
         
         .player {
@@ -173,6 +182,30 @@
         @keyframes spin {
             to { transform: rotate(360deg); }
         }
+        
+        .movement-arrow {
+            position: absolute;
+            z-index: 9;
+            pointer-events: none;
+            opacity: 0.7;
+        }
+        
+        .online-indicator {
+            position: absolute;
+            top: -10px;
+            right: -10px;
+            width: 12px;
+            height: 12px;
+            background-color: #4CAF50;
+            border-radius: 50%;
+            border: 2px solid #1a1a2e;
+            z-index: 31;
+        }
+        
+        .offline {
+            filter: grayscale(70%);
+            opacity: 0.5;
+        }
     </style>
 </head>
 <body>
@@ -187,7 +220,8 @@
         <div id="ui">
             <h3><i class="fas fa-info-circle"></i> Thông Tin Game</h3>
             <div><i class="fas fa-user"></i> Vị trí: <span id="position">0, 0</span></div>
-            <div><i class="fas fa-users"></i> Người chơi: <span id="player-count">1</span></div>
+            <div><i class="fas fa-users"></i> Người chơi online: <span id="player-count">1</span></div>
+            <div><i class="fas fa-running"></i> Di chuyển tới: <span id="target-position">-</span></div>
         </div>
         
         <button id="logout-btn">
@@ -195,8 +229,8 @@
         </button>
         
         <div id="instructions">
-            <p><i class="fas fa-mouse-pointer"></i> Nhấp vào bản đồ để di chuyển nhân vật</p>
-            <p><i class="fas fa-user-friends"></i> Các người chơi khác sẽ xuất hiện với email của họ</p>
+            <p><i class="fas fa-mouse-pointer"></i> Di chuột vào ô và nhấp để di chuyển nhân vật</p>
+            <p><i class="fas fa-user-friends"></i> Chỉ hiển thị người chơi đang online</p>
         </div>
     </div>
 
@@ -224,19 +258,25 @@
         const db = firebase.firestore();
 
         // Game variables
-        const TILE_SIZE = 50; // Each tile is 50px
-        const CHARACTER_HEIGHT = 2 * TILE_SIZE; // Character height is 2 tiles
+        const TILE_SIZE = 50;
+        const CHARACTER_HEIGHT = 2 * TILE_SIZE;
+        const MOVE_SPEED = 1; // 1 tile per second
         let currentUser = null;
         let playerId = null;
         let playerPosition = { x: 0, y: 0 };
+        let targetPosition = { x: 0, y: 0 };
+        let isMoving = false;
         let players = {};
+        let playerStatus = {};
         let npcPosition = { x: 5, y: 5 };
         let cameraAnimation = null;
+        let movementArrow = null;
 
         // DOM elements
         const gameContainer = document.getElementById('game-container');
         const gameMap = document.getElementById('game-map');
         const positionDisplay = document.getElementById('position');
+        const targetPositionDisplay = document.getElementById('target-position');
         const playerCountDisplay = document.getElementById('player-count');
         const logoutBtn = document.getElementById('logout-btn');
         const loadingElement = document.getElementById('loading');
@@ -250,7 +290,6 @@
                     playerId = user.uid;
                     setupGame();
                 } else {
-                    // Redirect to login if not authenticated
                     window.location.href = 'login.html';
                 }
             });
@@ -265,14 +304,14 @@
 
         // Setup game
         function setupGame() {
+            // Create map tiles
+            createMapTiles();
+            
             // Create player character
             createPlayerCharacter();
             
             // Create NPC
             createNPC();
-            
-            // Setup click to move
-            gameMap.addEventListener('click', handleMapClick);
             
             // Load initial player position
             loadPlayerPosition();
@@ -280,10 +319,46 @@
             // Start listening for other players
             startPlayerListener();
             
+            // Start player status listener
+            startPlayerStatusListener();
+            
+            // Update player status regularly
+            setInterval(updatePlayerStatus, 10000);
+            
             // Hide loading screen
             setTimeout(() => {
                 loadingElement.style.display = 'none';
             }, 1000);
+        }
+
+        // Create map tiles
+        function createMapTiles() {
+            const MAP_SIZE = 40; // 40x40 tiles (2000px / 50px)
+            
+            for (let y = 0; y < MAP_SIZE; y++) {
+                for (let x = 0; x < MAP_SIZE; x++) {
+                    const tile = document.createElement('div');
+                    tile.className = 'tile';
+                    tile.dataset.x = x;
+                    tile.dataset.y = y;
+                    
+                    // Calculate position
+                    tile.style.left = `${x * TILE_SIZE}px`;
+                    tile.style.top = `${y * TILE_SIZE}px`;
+                    
+                    // Add click event
+                    tile.addEventListener('click', (e) => {
+                        const targetX = parseInt(e.target.dataset.x);
+                        const targetY = parseInt(e.target.dataset.y);
+                        
+                        if (!isMoving && (targetX !== playerPosition.x || targetY !== playerPosition.y)) {
+                            movePlayer(targetX, targetY);
+                        }
+                    });
+                    
+                    gameMap.appendChild(tile);
+                }
+            }
         }
 
         // Create player character
@@ -294,6 +369,8 @@
             playerElement.id = `player-${playerId}`;
             playerElement.style.width = 'auto';
             playerElement.style.height = `${CHARACTER_HEIGHT}px`;
+            playerElement.style.left = '0px';
+            playerElement.style.top = '0px';
             gameMap.appendChild(playerElement);
             
             // Create player label
@@ -302,6 +379,12 @@
             playerLabel.id = `player-label-${playerId}`;
             playerLabel.textContent = currentUser.email;
             playerElement.appendChild(playerLabel);
+            
+            // Create online indicator
+            const onlineIndicator = document.createElement('div');
+            onlineIndicator.className = 'online-indicator';
+            onlineIndicator.id = `online-indicator-${playerId}`;
+            playerElement.appendChild(onlineIndicator);
             
             // Update player position
             updatePlayerPosition();
@@ -327,39 +410,146 @@
             positionCharacter(npcElement, npcPosition.x, npcPosition.y);
         }
 
-        // Handle map click to move player
-        function handleMapClick(event) {
-            const rect = gameMap.getBoundingClientRect();
-            const scale = parseFloat(gameMap.style.transform?.match(/scale\(([^)]+)\)/)?.[1] || 1);
+        // Move player to new position with smooth animation
+        function movePlayer(x, y) {
+            if (isMoving) return;
             
-            // Calculate clicked position in game coordinates
-            const clickX = (event.clientX - rect.left) / scale;
-            const clickY = (event.clientY - rect.top) / scale;
+            targetPosition = { x: x, y: y };
+            targetPositionDisplay.textContent = `${x}, ${y}`;
             
-            // Convert to tile coordinates
-            const targetX = Math.floor(clickX / TILE_SIZE);
-            const targetY = Math.floor(clickY / TILE_SIZE);
+            // Calculate movement duration based on distance
+            const dx = Math.abs(x - playerPosition.x);
+            const dy = Math.abs(y - playerPosition.y);
+            const distance = Math.sqrt(dx * dx + dy * dy);
+            const duration = distance / MOVE_SPEED * 1000; // Convert to milliseconds
             
-            // Move player to new position
-            movePlayer(targetX, targetY);
+            // Create movement arrow
+            createMovementArrow(playerPosition.x, playerPosition.y, x, y);
+            
+            // Start movement
+            isMoving = true;
+            const playerElement = document.getElementById(`player-${playerId}`);
+            
+            // Update position gradually
+            const startX = playerPosition.x;
+            const startY = playerPosition.y;
+            const startTime = Date.now();
+            
+            function animateMovement() {
+                const elapsed = Date.now() - startTime;
+                const progress = Math.min(elapsed / duration, 1);
+                
+                const currentX = startX + (x - startX) * progress;
+                const currentY = startY + (y - startY) * progress;
+                
+                // Update visual position
+                positionCharacter(playerElement, currentX, currentY);
+                
+                // Update movement arrow
+                updateMovementArrow(currentX, currentY, x, y);
+                
+                if (progress < 1) {
+                    requestAnimationFrame(animateMovement);
+                } else {
+                    // Movement complete
+                    playerPosition.x = x;
+                    playerPosition.y = y;
+                    positionDisplay.textContent = `${x}, ${y}`;
+                    isMoving = false;
+                    targetPositionDisplay.textContent = '-';
+                    
+                    // Remove movement arrow
+                    removeMovementArrow();
+                    
+                    // Save position to Firestore
+                    savePlayerPosition();
+                    
+                    // Update camera
+                    updateCamera();
+                }
+            }
+            
+            animateMovement();
         }
 
-        // Move player to new position
-        function movePlayer(x, y) {
-            playerPosition.x = x;
-            playerPosition.y = y;
+        // Create movement arrow
+        function createMovementArrow(fromX, fromY, toX, toY) {
+            // Remove existing arrow
+            removeMovementArrow();
             
-            // Update player position display
-            positionDisplay.textContent = `${x}, ${y}`;
+            // Create arrow element
+            movementArrow = document.createElement('div');
+            movementArrow.className = 'movement-arrow';
+            movementArrow.id = 'movement-arrow';
             
-            // Update player position in DOM
-            updatePlayerPosition();
+            // Calculate positions
+            const fromPixelX = fromX * TILE_SIZE + TILE_SIZE / 2;
+            const fromPixelY = fromY * TILE_SIZE + TILE_SIZE / 2 - (CHARACTER_HEIGHT - TILE_SIZE) / 2;
+            const toPixelX = toX * TILE_SIZE + TILE_SIZE / 2;
+            const toPixelY = toY * TILE_SIZE + TILE_SIZE / 2 - (CHARACTER_HEIGHT - TILE_SIZE) / 2;
             
-            // Save position to Firestore
-            savePlayerPosition();
+            // Calculate arrow properties
+            const dx = toPixelX - fromPixelX;
+            const dy = toPixelY - fromPixelY;
+            const length = Math.sqrt(dx * dx + dy * dy);
+            const angle = Math.atan2(dy, dx) * 180 / Math.PI;
             
-            // Update camera with smooth animation
-            updateCamera();
+            // Set arrow style
+            movementArrow.style.width = `${length}px`;
+            movementArrow.style.height = '4px';
+            movementArrow.style.left = `${fromPixelX}px`;
+            movementArrow.style.top = `${fromPixelY}px`;
+            movementArrow.style.transform = `rotate(${angle}deg)`;
+            movementArrow.style.transformOrigin = '0 0';
+            movementArrow.style.background = `repeating-linear-gradient(
+                to right,
+                #ffcc00,
+                #ffcc00 10px,
+                transparent 10px,
+                transparent 20px
+            )`;
+            
+            gameMap.appendChild(movementArrow);
+        }
+
+        // Update movement arrow
+        function updateMovementArrow(fromX, fromY, toX, toY) {
+            if (!movementArrow) return;
+            
+            // Calculate positions
+            const fromPixelX = fromX * TILE_SIZE + TILE_SIZE / 2;
+            const fromPixelY = fromY * TILE_SIZE + TILE_SIZE / 2 - (CHARACTER_HEIGHT - TILE_SIZE) / 2;
+            const toPixelX = toX * TILE_SIZE + TILE_SIZE / 2;
+            const toPixelY = toY * TILE_SIZE + TILE_SIZE / 2 - (CHARACTER_HEIGHT - TILE_SIZE) / 2;
+            
+            // Calculate arrow properties
+            const dx = toPixelX - fromPixelX;
+            const dy = toPixelY - fromPixelY;
+            const length = Math.sqrt(dx * dx + dy * dy);
+            const angle = Math.atan2(dy, dx) * 180 / Math.PI;
+            
+            // Update arrow
+            movementArrow.style.width = `${length}px`;
+            movementArrow.style.left = `${fromPixelX}px`;
+            movementArrow.style.top = `${fromPixelY}px`;
+            movementArrow.style.transform = `rotate(${angle}deg)`;
+        }
+
+        // Remove movement arrow
+        function removeMovementArrow() {
+            if (movementArrow) {
+                movementArrow.remove();
+                movementArrow = null;
+            }
+        }
+
+        // Position a character at specific coordinates
+        function positionCharacter(element, x, y) {
+            const posX = x * TILE_SIZE;
+            const posY = y * TILE_SIZE - (CHARACTER_HEIGHT - TILE_SIZE);
+            
+            element.style.left = `${posX}px`;
+            element.style.top = `${posY}px`;
         }
 
         // Update player position in DOM
@@ -370,16 +560,7 @@
             }
         }
 
-        // Position a character at specific coordinates
-        function positionCharacter(element, x, y) {
-            // Center the character on the tile
-            const posX = x * TILE_SIZE;
-            const posY = y * TILE_SIZE - (CHARACTER_HEIGHT - TILE_SIZE); // Adjust for character height
-            
-            element.style.transform = `translate(${posX}px, ${posY}px)`;
-        }
-
-        // Update camera to follow player with smooth animation
+        // Update camera to follow player
         function updateCamera() {
             const containerWidth = gameContainer.clientWidth;
             const containerHeight = gameContainer.clientHeight;
@@ -411,35 +592,28 @@
         function savePlayerPosition() {
             if (!playerId) return;
             
-            // Save current position
             db.collection('playerPositions').doc(playerId).set({
                 x: playerPosition.x,
                 y: playerPosition.y,
                 timestamp: firebase.firestore.FieldValue.serverTimestamp(),
                 playerId: playerId,
-                email: currentUser.email
+                email: currentUser.email,
+                isMoving: isMoving,
+                targetX: targetPosition.x,
+                targetY: targetPosition.y
             });
+        }
+
+        // Update player status
+        function updatePlayerStatus() {
+            if (!playerId) return;
             
-            // Keep only the 3 most recent positions per player
-            db.collection('playerPositions')
-                .where('playerId', '==', playerId)
-                .orderBy('timestamp', 'desc')
-                .get()
-                .then((snapshot) => {
-                    const batch = db.batch();
-                    let count = 0;
-                    
-                    snapshot.forEach((doc) => {
-                        if (count >= 3) {
-                            batch.delete(doc.ref);
-                        }
-                        count++;
-                    });
-                    
-                    if (count > 3) {
-                        batch.commit();
-                    }
-                });
+            db.collection('playerStatus').doc(playerId).set({
+                playerId: playerId,
+                email: currentUser.email,
+                lastActive: firebase.firestore.FieldValue.serverTimestamp(),
+                online: true
+            });
         }
 
         // Load player position from Firestore
@@ -454,41 +628,89 @@
                         const data = doc.data();
                         playerPosition.x = data.x;
                         playerPosition.y = data.y;
+                        positionDisplay.textContent = `${playerPosition.x}, ${playerPosition.y}`;
                         updatePlayerPosition();
                         updateCamera();
                     }
                 });
         }
 
-        // Start listening for other players
+        // Start listening for other players' positions
         function startPlayerListener() {
             db.collection('playerPositions')
                 .onSnapshot((snapshot) => {
                     const currentPlayers = {};
-                    let playerCount = 0;
+                    let onlineCount = 0;
                     
                     snapshot.forEach((doc) => {
                         const data = doc.data();
-                        if (data.playerId !== playerId) {
-                            currentPlayers[data.playerId] = data;
-                            playerCount++;
-                            
-                            // Create or update player character
-                            createOrUpdateOtherPlayer(data.playerId, data.x, data.y, data.email);
+                        const playerId = data.playerId;
+                        
+                        // Only show online players
+                        if (playerStatus[playerId] && playerStatus[playerId].online) {
+                            if (playerId !== currentUser.uid) {
+                                currentPlayers[playerId] = data;
+                                onlineCount++;
+                                
+                                // Create or update player character
+                                createOrUpdateOtherPlayer(
+                                    playerId, 
+                                    data.x, 
+                                    data.y, 
+                                    data.email,
+                                    data.isMoving,
+                                    data.targetX,
+                                    data.targetY
+                                );
+                            }
                         }
                     });
                     
                     players = currentPlayers;
-                    playerCountDisplay.textContent = playerCount + 1; // +1 for current player
+                    playerCountDisplay.textContent = onlineCount + 1; // +1 for current player
                     
-                    // Remove players that are no longer in the database
-                    removeDisconnectedPlayers(currentPlayers);
+                    // Remove players that are offline
+                    removeOfflinePlayers(currentPlayers);
+                });
+        }
+
+        // Start listening for player status
+        function startPlayerStatusListener() {
+            // Update current player status
+            updatePlayerStatus();
+            
+            // Listen for other players' status
+            db.collection('playerStatus')
+                .onSnapshot((snapshot) => {
+                    snapshot.forEach((doc) => {
+                        const data = doc.data();
+                        playerStatus[data.playerId] = data;
+                        
+                        // Set timeout to mark as offline after 30 seconds
+                        setTimeout(() => {
+                            if (data.playerId !== currentUser.uid) {
+                                const now = new Date().getTime();
+                                const lastActive = data.lastActive?.toDate()?.getTime() || 0;
+                                
+                                if (now - lastActive > 30000) {
+                                    playerStatus[data.playerId].online = false;
+                                    
+                                    // Hide offline player
+                                    const playerElement = document.getElementById(`player-${data.playerId}`);
+                                    if (playerElement) {
+                                        playerElement.classList.add('offline');
+                                    }
+                                }
+                            }
+                        }, 30000);
+                    });
                 });
         }
 
         // Create or update other player character
-        function createOrUpdateOtherPlayer(id, x, y, email) {
+        function createOrUpdateOtherPlayer(id, x, y, email, isMoving, targetX, targetY) {
             let playerElement = document.getElementById(`player-${id}`);
+            let isNewPlayer = false;
             
             if (!playerElement) {
                 playerElement = document.createElement('img');
@@ -497,6 +719,8 @@
                 playerElement.id = `player-${id}`;
                 playerElement.style.width = 'auto';
                 playerElement.style.height = `${CHARACTER_HEIGHT}px`;
+                playerElement.style.left = '0px';
+                playerElement.style.top = '0px';
                 gameMap.appendChild(playerElement);
                 
                 // Create player label
@@ -505,19 +729,48 @@
                 playerLabel.id = `player-label-${id}`;
                 playerLabel.textContent = email;
                 playerElement.appendChild(playerLabel);
+                
+                // Create online indicator
+                const onlineIndicator = document.createElement('div');
+                onlineIndicator.className = 'online-indicator';
+                onlineIndicator.id = `online-indicator-${id}`;
+                playerElement.appendChild(onlineIndicator);
+                
+                isNewPlayer = true;
             }
             
-            positionCharacter(playerElement, x, y);
+            // Remove offline class if player is online
+            playerElement.classList.remove('offline');
+            
+            // Handle movement if player is moving
+            if (isMoving && targetX !== undefined && targetY !== undefined) {
+                // Calculate progress if we have previous position
+                const prevX = parseFloat(playerElement.dataset.prevX || x);
+                const prevY = parseFloat(playerElement.dataset.prevY || y);
+                
+                // Only animate if position changed significantly
+                if (Math.abs(prevX - x) > 0.1 || Math.abs(prevY - y) > 0.1 || isNewPlayer) {
+                    playerElement.dataset.prevX = x;
+                    playerElement.dataset.prevY = y;
+                    
+                    // Smoothly animate to new position
+                    positionCharacter(playerElement, x, y);
+                }
+            } else {
+                // Instant position update if not moving
+                positionCharacter(playerElement, x, y);
+            }
         }
 
-        // Remove disconnected players
-        function removeDisconnectedPlayers(currentPlayers) {
+        // Remove offline players
+        function removeOfflinePlayers(currentPlayers) {
             const playerElements = document.querySelectorAll('.character:not(.player):not(#npc)');
             
             playerElements.forEach(element => {
                 const id = element.id.replace('player-', '');
                 if (!currentPlayers[id] && id !== playerId) {
-                    element.remove();
+                    // Mark as offline instead of removing
+                    element.classList.add('offline');
                 }
             });
         }
