@@ -79,23 +79,6 @@
             z-index: 30;
         }
         
-        .chat-message {
-            position: absolute;
-            top: -50px;
-            left: 50%;
-            transform: translateX(-50%);
-            background: rgba(0, 0, 0, 0.8);
-            color: white;
-            padding: 5px 10px;
-            border-radius: 15px;
-            font-size: 12px;
-            max-width: 200px;
-            word-wrap: break-word;
-            z-index: 35;
-            box-shadow: 0 3px 10px rgba(0, 0, 0, 0.3);
-            border-left: 3px solid #4CAF50;
-        }
-        
         #ui {
             position: absolute;
             top: 20px;
@@ -107,6 +90,7 @@
             border-radius: 15px;
             z-index: 100;
             box-shadow: 0 5px 15px rgba(0, 0, 0, 0.3);
+            min-width: 200px;
         }
         
         #ui h3 {
@@ -229,165 +213,156 @@
             position: absolute;
             bottom: 20px;
             left: 20px;
-            width: 350px;
-            height: 400px;
-            background: rgba(0, 0, 0, 0.8);
-            backdrop-filter: blur(10px);
+            width: 300px;
+            background: rgba(0, 0, 0, 0.7);
+            backdrop-filter: blur(5px);
             border-radius: 15px;
             z-index: 100;
-            box-shadow: 0 5px 20px rgba(0, 0, 0, 0.4);
-            display: flex;
-            flex-direction: column;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.3);
             overflow: hidden;
         }
         
         #chat-header {
-            background: rgba(0, 0, 0, 0.9);
-            padding: 15px;
-            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
-        }
-        
-        #chat-header h3 {
-            color: #ffcc00;
-            display: flex;
-            align-items: center;
-            gap: 10px;
-        }
-        
-        #chat-messages {
-            flex: 1;
-            padding: 15px;
-            overflow-y: auto;
-            display: flex;
-            flex-direction: column;
-            gap: 10px;
-        }
-        
-        .message {
-            padding: 10px 15px;
-            border-radius: 10px;
-            max-width: 80%;
-            word-wrap: break-word;
-        }
-        
-        .own-message {
-            background: rgba(76, 175, 80, 0.2);
-            border-left: 3px solid #4CAF50;
-            align-self: flex-end;
-        }
-        
-        .other-message {
-            background: rgba(33, 150, 243, 0.2);
-            border-left: 3px solid #2196F3;
-            align-self: flex-start;
-        }
-        
-        .message-sender {
-            font-weight: bold;
-            margin-bottom: 5px;
-            font-size: 12px;
-            color: #ffcc00;
-        }
-        
-        .message-content {
-            font-size: 14px;
-        }
-        
-        .message-time {
-            font-size: 10px;
-            opacity: 0.7;
-            text-align: right;
-            margin-top: 5px;
-        }
-        
-        #chat-input-container {
-            padding: 15px;
-            border-top: 1px solid rgba(255, 255, 255, 0.1);
-            display: flex;
-            gap: 10px;
-        }
-        
-        #chat-input {
-            flex: 1;
             padding: 12px 15px;
-            background: rgba(255, 255, 255, 0.1);
-            border: 1px solid rgba(255, 255, 255, 0.2);
-            border-radius: 25px;
-            color: white;
-            font-size: 14px;
-            outline: none;
-            transition: all 0.3s;
-        }
-        
-        #chat-input:focus {
-            border-color: #ffcc00;
-            background: rgba(255, 255, 255, 0.15);
-        }
-        
-        #chat-send-btn {
-            padding: 12px 20px;
-            background: linear-gradient(135deg, #4CAF50, #2E7D32);
-            color: white;
-            border: none;
-            border-radius: 25px;
-            cursor: pointer;
+            background: rgba(255, 204, 0, 0.9);
+            color: #1a1a2e;
             font-weight: 600;
             display: flex;
             align-items: center;
             gap: 8px;
+        }
+        
+        #chat-box {
+            height: 200px;
+            overflow-y: auto;
+            padding: 10px;
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+        
+        .chat-message {
+            padding: 8px 12px;
+            border-radius: 10px;
+            font-size: 14px;
+            max-width: 85%;
+            word-wrap: break-word;
+            animation: fadeIn 0.3s ease;
+        }
+        
+        .chat-message.own {
+            background: rgba(255, 204, 0, 0.3);
+            align-self: flex-end;
+            border: 1px solid rgba(255, 204, 0, 0.5);
+        }
+        
+        .chat-message.other {
+            background: rgba(255, 255, 255, 0.1);
+            align-self: flex-start;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+        }
+        
+        .chat-sender {
+            font-weight: 600;
+            font-size: 12px;
+            margin-bottom: 3px;
+            color: #ffcc00;
+        }
+        
+        #chat-input-container {
+            display: flex;
+            padding: 10px;
+            gap: 8px;
+            border-top: 1px solid rgba(255, 255, 255, 0.2);
+        }
+        
+        #chat-input {
+            flex: 1;
+            padding: 8px 12px;
+            border: none;
+            border-radius: 20px;
+            background: rgba(255, 255, 255, 0.1);
+            color: white;
+            font-size: 14px;
+            outline: none;
+        }
+        
+        #chat-input:focus {
+            background: rgba(255, 255, 255, 0.15);
+        }
+        
+        #chat-send-btn {
+            padding: 8px 15px;
+            background: #ffcc00;
+            color: #1a1a2e;
+            border: none;
+            border-radius: 20px;
+            cursor: pointer;
+            font-weight: 600;
             transition: all 0.3s;
         }
         
         #chat-send-btn:hover {
-            background: linear-gradient(135deg, #45a049, #1B5E20);
+            background: #ffd633;
             transform: translateY(-2px);
         }
         
-        #chat-toggle-btn {
+        .speech-bubble {
             position: absolute;
-            bottom: 20px;
-            left: 20px;
+            top: -35px;
+            left: 50%;
+            transform: translateX(-50%);
             background: rgba(0, 0, 0, 0.8);
             color: white;
-            border: none;
-            width: 50px;
-            height: 50px;
-            border-radius: 50%;
-            cursor: pointer;
-            z-index: 99;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 20px;
-            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.3);
-            transition: all 0.3s;
+            padding: 5px 10px;
+            border-radius: 10px;
+            font-size: 12px;
+            white-space: nowrap;
+            max-width: 200px;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            z-index: 40;
+            animation: fadeIn 0.3s ease;
         }
         
-        #chat-toggle-btn:hover {
-            background: rgba(0, 0, 0, 0.9);
-            transform: scale(1.1);
+        .speech-bubble::after {
+            content: '';
+            position: absolute;
+            bottom: -5px;
+            left: 50%;
+            transform: translateX(-50%);
+            border-width: 5px 5px 0;
+            border-style: solid;
+            border-color: rgba(0, 0, 0, 0.8) transparent transparent;
+        }
+        
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateX(-50%) translateY(10px); }
+            to { opacity: 1; transform: translateX(-50%) translateY(0); }
+        }
+        
+        @keyframes fadeOut {
+            from { opacity: 1; }
+            to { opacity: 0; }
         }
         
         /* Scrollbar styling */
-        #chat-messages::-webkit-scrollbar {
-            width: 5px;
+        #chat-box::-webkit-scrollbar {
+            width: 6px;
         }
         
-        #chat-messages::-webkit-scrollbar-track {
+        #chat-box::-webkit-scrollbar-track {
             background: rgba(255, 255, 255, 0.1);
-            border-radius: 5px;
+            border-radius: 3px;
         }
         
-        #chat-messages::-webkit-scrollbar-thumb {
-            background: #ffcc00;
-            border-radius: 5px;
+        #chat-box::-webkit-scrollbar-thumb {
+            background: rgba(255, 204, 0, 0.5);
+            border-radius: 3px;
         }
         
-        .no-messages {
-            text-align: center;
-            color: rgba(255, 255, 255, 0.5);
-            font-style: italic;
-            margin-top: 50%;
+        #chat-box::-webkit-scrollbar-thumb:hover {
+            background: rgba(255, 204, 0, 0.7);
         }
     </style>
 </head>
@@ -405,36 +380,28 @@
             <div><i class="fas fa-user"></i> Vị trí: <span id="position">0, 0</span></div>
             <div><i class="fas fa-users"></i> Người chơi online: <span id="player-count">1</span></div>
             <div><i class="fas fa-running"></i> Di chuyển tới: <span id="target-position">-</span></div>
+            <div><i class="fas fa-tachometer-alt"></i> Tốc độ: 2.5 khối/s</div>
         </div>
         
         <button id="logout-btn">
             <i class="fas fa-sign-out-alt"></i> Đăng Xuất
         </button>
         
-        <!-- Chat Toggle Button -->
-        <button id="chat-toggle-btn">
-            <i class="fas fa-comment-alt"></i>
-        </button>
-        
-        <!-- Chat Container -->
-        <div id="chat-container" style="display: none;">
+        <!-- Chat System -->
+        <div id="chat-container">
             <div id="chat-header">
-                <h3><i class="fas fa-comments"></i> Chat Game</h3>
+                <i class="fas fa-comments"></i> Trò chuyện
             </div>
-            <div id="chat-messages">
-                <div class="no-messages">Chưa có tin nhắn nào. Hãy bắt đầu trò chuyện!</div>
-            </div>
+            <div id="chat-box"></div>
             <div id="chat-input-container">
-                <input type="text" id="chat-input" placeholder="Nhập tin nhắn của bạn...">
-                <button id="chat-send-btn">
-                    <i class="fas fa-paper-plane"></i> Gửi
-                </button>
+                <input type="text" id="chat-input" placeholder="Nhập tin nhắn...">
+                <button id="chat-send-btn">Gửi</button>
             </div>
         </div>
         
         <div id="instructions">
             <p><i class="fas fa-mouse-pointer"></i> Di chuột vào ô và nhấp để di chuyển nhân vật</p>
-            <p><i class="fas fa-comment"></i> Nhấn vào biểu tượng chat để trò chuyện</p>
+            <p><i class="fas fa-comment"></i> Nhấn Enter để gửi tin nhắn</p>
         </div>
     </div>
 
@@ -465,6 +432,7 @@
         const TILE_SIZE = 50;
         const CHARACTER_HEIGHT = 2 * TILE_SIZE;
         const MOVE_SPEED = 2.5; // 2.5 tiles per second
+        const CHAT_MESSAGE_DURATION = 10000; // 10 seconds
         let currentUser = null;
         let playerId = null;
         let playerPosition = { x: 0, y: 0 };
@@ -473,6 +441,7 @@
         let players = {};
         let playerStatus = {};
         let npcPosition = { x: 5, y: 5 };
+        let cameraAnimation = null;
         let movementArrow = null;
         let chatMessages = {};
 
@@ -484,11 +453,7 @@
         const playerCountDisplay = document.getElementById('player-count');
         const logoutBtn = document.getElementById('logout-btn');
         const loadingElement = document.getElementById('loading');
-        
-        // Chat elements
-        const chatContainer = document.getElementById('chat-container');
-        const chatToggleBtn = document.getElementById('chat-toggle-btn');
-        const chatMessagesDiv = document.getElementById('chat-messages');
+        const chatBox = document.getElementById('chat-box');
         const chatInput = document.getElementById('chat-input');
         const chatSendBtn = document.getElementById('chat-send-btn');
 
@@ -512,16 +477,13 @@
                 });
             });
 
-            // Chat toggle button
-            chatToggleBtn.addEventListener('click', toggleChat);
-            
             // Chat send button
-            chatSendBtn.addEventListener('click', sendChatMessage);
-            
-            // Enter key to send message
+            chatSendBtn.addEventListener('click', sendMessage);
+
+            // Chat input enter key
             chatInput.addEventListener('keypress', (e) => {
                 if (e.key === 'Enter') {
-                    sendChatMessage();
+                    sendMessage();
                 }
             });
         }
@@ -604,7 +566,7 @@
             const playerLabel = document.createElement('div');
             playerLabel.className = 'player-label';
             playerLabel.id = `player-label-${playerId}`;
-            playerLabel.textContent = currentUser.email.split('@')[0];
+            playerLabel.textContent = currentUser.email;
             playerElement.appendChild(playerLabel);
             
             // Create online indicator
@@ -675,8 +637,8 @@
                 // Update movement arrow
                 updateMovementArrow(currentX, currentY, x, y);
                 
-                // Update camera continuously during movement
-                updateCameraDuringMovement(currentX, currentY);
+                // Update camera during movement
+                updateCamera(currentX, currentY);
                 
                 if (progress < 1) {
                     requestAnimationFrame(animateMovement);
@@ -693,6 +655,9 @@
                     
                     // Save position to Firestore
                     savePlayerPosition();
+                    
+                    // Final camera update
+                    updateCamera(x, y);
                 }
             }
             
@@ -713,7 +678,7 @@
             const fromPixelX = fromX * TILE_SIZE + TILE_SIZE / 2;
             const fromPixelY = fromY * TILE_SIZE + TILE_SIZE / 2 - (CHARACTER_HEIGHT - TILE_SIZE) / 2;
             const toPixelX = toX * TILE_SIZE + TILE_SIZE / 2;
-            const toPixelY = toY * TILE_SIZE + TILE_SIZE / 2 - (CHARACTER_HEngth - TILE_SIZE) / 2;
+            const toPixelY = toY * TILE_SIZE + TILE_SIZE / 2 - (CHARACTER_HEIGHT - TILE_SIZE) / 2;
             
             // Calculate arrow properties
             const dx = toPixelX - fromPixelX;
@@ -784,22 +749,11 @@
             const playerElement = document.getElementById(`player-${playerId}`);
             if (playerElement) {
                 positionCharacter(playerElement, playerPosition.x, playerPosition.y);
-                updateCamera();
             }
         }
 
-        // Update camera to follow player
-        function updateCamera() {
-            updateCameraPosition(playerPosition.x, playerPosition.y);
-        }
-
-        // Update camera during movement
-        function updateCameraDuringMovement(currentX, currentY) {
-            updateCameraPosition(currentX, currentY);
-        }
-
-        // Update camera position
-        function updateCameraPosition(x, y) {
+        // Update camera to follow player during movement
+        function updateCamera(x, y) {
             const containerWidth = gameContainer.clientWidth;
             const containerHeight = gameContainer.clientHeight;
             
@@ -811,7 +765,8 @@
             const translateX = containerWidth / 2 - centerX;
             const translateY = containerHeight / 2 - centerY;
             
-            // Apply transform to game map with smooth transition
+            // Apply smooth transform to game map during movement
+            gameMap.style.transition = 'transform 0.1s linear';
             gameMap.style.transform = `translate(${translateX}px, ${translateY}px)`;
         }
 
@@ -857,7 +812,127 @@
                         playerPosition.y = data.y;
                         positionDisplay.textContent = `${playerPosition.x}, ${playerPosition.y}`;
                         updatePlayerPosition();
+                        updateCamera(playerPosition.x, playerPosition.y);
                     }
+                });
+        }
+
+        // Send chat message
+        function sendMessage() {
+            const message = chatInput.value.trim();
+            if (!message) return;
+            
+            // Clear input
+            chatInput.value = '';
+            
+            // Add message to chat box
+            addChatMessage(currentUser.email, message, true);
+            
+            // Show speech bubble above player
+            showSpeechBubble(playerId, message);
+            
+            // Save message to Firestore
+            const messageId = Date.now().toString();
+            db.collection('chatMessages').doc(messageId).set({
+                playerId: playerId,
+                email: currentUser.email,
+                message: message,
+                timestamp: firebase.firestore.FieldValue.serverTimestamp()
+            });
+            
+            // Auto remove message after duration
+            setTimeout(() => {
+                removeSpeechBubble(playerId);
+            }, CHAT_MESSAGE_DURATION);
+        }
+
+        // Add chat message to chat box
+        function addChatMessage(email, message, isOwn = false) {
+            const messageElement = document.createElement('div');
+            messageElement.className = `chat-message ${isOwn ? 'own' : 'other'}`;
+            
+            const senderElement = document.createElement('div');
+            senderElement.className = 'chat-sender';
+            senderElement.textContent = email;
+            
+            const messageText = document.createElement('div');
+            messageText.textContent = message;
+            
+            messageElement.appendChild(senderElement);
+            messageElement.appendChild(messageText);
+            
+            chatBox.appendChild(messageElement);
+            
+            // Scroll to bottom
+            chatBox.scrollTop = chatBox.scrollHeight;
+            
+            // Auto remove after duration
+            setTimeout(() => {
+                messageElement.remove();
+            }, CHAT_MESSAGE_DURATION);
+        }
+
+        // Show speech bubble above player
+        function showSpeechBubble(playerId, message) {
+            // Remove existing speech bubble
+            removeSpeechBubble(playerId);
+            
+            const playerElement = document.getElementById(`player-${playerId}`);
+            if (!playerElement) return;
+            
+            const speechBubble = document.createElement('div');
+            speechBubble.className = 'speech-bubble';
+            speechBubble.id = `speech-bubble-${playerId}`;
+            speechBubble.textContent = message;
+            
+            playerElement.appendChild(speechBubble);
+            
+            // Store reference
+            if (!chatMessages[playerId]) {
+                chatMessages[playerId] = {};
+            }
+            chatMessages[playerId].speechBubble = speechBubble;
+        }
+
+        // Remove speech bubble
+        function removeSpeechBubble(playerId) {
+            const speechBubble = document.getElementById(`speech-bubble-${playerId}`);
+            if (speechBubble) {
+                speechBubble.style.animation = 'fadeOut 0.5s ease';
+                setTimeout(() => {
+                    speechBubble.remove();
+                }, 500);
+                
+                if (chatMessages[playerId]) {
+                    delete chatMessages[playerId].speechBubble;
+                }
+            }
+        }
+
+        // Start listening for chat messages
+        function startChatListener() {
+            db.collection('chatMessages')
+                .orderBy('timestamp', 'desc')
+                .limit(20)
+                .onSnapshot((snapshot) => {
+                    snapshot.docChanges().forEach((change) => {
+                        if (change.type === 'added') {
+                            const data = change.doc.data();
+                            
+                            // Only show if not our own message (we already showed it)
+                            if (data.playerId !== playerId) {
+                                addChatMessage(data.email, data.message, false);
+                                
+                                // Show speech bubble above player
+                                showSpeechBubble(data.playerId, data.message);
+                                
+                                // Auto remove after duration
+                                setTimeout(() => {
+                                    removeSpeechBubble(data.playerId);
+                                }, CHAT_MESSAGE_DURATION);
+                            }
+                        }
+                    });
                 });
         }
 
@@ -925,6 +1000,7 @@
                                     const playerElement = document.getElementById(`player-${data.playerId}`);
                                     if (playerElement) {
                                         playerElement.classList.add('offline');
+                                        removeSpeechBubble(data.playerId);
                                     }
                                 }
                             }
@@ -953,7 +1029,7 @@
                 const playerLabel = document.createElement('div');
                 playerLabel.className = 'player-label';
                 playerLabel.id = `player-label-${id}`;
-                playerLabel.textContent = email.split('@')[0];
+                playerLabel.textContent = email;
                 playerElement.appendChild(playerLabel);
                 
                 // Create online indicator
@@ -997,141 +1073,9 @@
                 if (!currentPlayers[id] && id !== playerId) {
                     // Mark as offline instead of removing
                     element.classList.add('offline');
+                    removeSpeechBubble(id);
                 }
             });
-        }
-
-        // Chat Functions
-        function toggleChat() {
-            if (chatContainer.style.display === 'none' || !chatContainer.style.display) {
-                chatContainer.style.display = 'flex';
-                chatToggleBtn.innerHTML = '<i class="fas fa-times"></i>';
-            } else {
-                chatContainer.style.display = 'none';
-                chatToggleBtn.innerHTML = '<i class="fas fa-comment-alt"></i>';
-            }
-        }
-
-        function sendChatMessage() {
-            const message = chatInput.value.trim();
-            if (!message) return;
-            
-            // Clear input
-            chatInput.value = '';
-            
-            // Create message object
-            const messageData = {
-                playerId: playerId,
-                playerName: currentUser.email.split('@')[0],
-                message: message,
-                timestamp: firebase.firestore.FieldValue.serverTimestamp()
-            };
-            
-            // Save to Firestore
-            db.collection('chatMessages').add(messageData);
-        }
-
-        function startChatListener() {
-            db.collection('chatMessages')
-                .orderBy('timestamp', 'desc')
-                .limit(50)
-                .onSnapshot((snapshot) => {
-                    snapshot.docChanges().forEach((change) => {
-                        if (change.type === 'added') {
-                            const messageData = change.doc.data();
-                            displayChatMessage(messageData);
-                            
-                            // Auto-remove message after 10 seconds
-                            setTimeout(() => {
-                                removeChatMessage(change.doc.id, messageData.playerId);
-                            }, 10000);
-                        }
-                    });
-                });
-        }
-
-        function displayChatMessage(messageData) {
-            // Add to chat messages div
-            const messageElement = document.createElement('div');
-            messageElement.className = `message ${messageData.playerId === playerId ? 'own-message' : 'other-message'}`;
-            messageElement.id = `chat-${messageData.playerId}-${Date.now()}`;
-            
-            const time = new Date(messageData.timestamp?.toDate() || new Date());
-            const timeString = `${time.getHours().toString().padStart(2, '0')}:${time.getMinutes().toString().padStart(2, '0')}`;
-            
-            messageElement.innerHTML = `
-                <div class="message-sender">${messageData.playerName}</div>
-                <div class="message-content">${messageData.message}</div>
-                <div class="message-time">${timeString}</div>
-            `;
-            
-            // Remove "no messages" text if it exists
-            const noMessages = document.querySelector('.no-messages');
-            if (noMessages) {
-                noMessages.remove();
-            }
-            
-            // Add to chat messages
-            chatMessagesDiv.insertBefore(messageElement, chatMessagesDiv.firstChild);
-            
-            // Display message above player's head
-            if (messageData.playerId === playerId) {
-                displayPlayerChatMessage(messageData.message, true);
-            } else {
-                displayPlayerChatMessage(messageData.message, false, messageData.playerId, messageData.playerName);
-            }
-        }
-
-        function displayPlayerChatMessage(message, isOwn = false, playerId = null, playerName = null) {
-            let targetPlayerId = isOwn ? currentUser.uid : playerId;
-            let targetPlayerName = isOwn ? currentUser.email.split('@')[0] : playerName;
-            
-            const playerElement = document.getElementById(`player-${targetPlayerId}`);
-            if (!playerElement) return;
-            
-            // Remove existing chat message for this player
-            const existingChat = playerElement.querySelector('.chat-message');
-            if (existingChat) {
-                existingChat.remove();
-            }
-            
-            // Create new chat message element
-            const chatMessage = document.createElement('div');
-            chatMessage.className = 'chat-message';
-            chatMessage.id = `chat-msg-${targetPlayerId}-${Date.now()}`;
-            chatMessage.textContent = message;
-            
-            playerElement.appendChild(chatMessage);
-            
-            // Store reference for later removal
-            chatMessages[chatMessage.id] = setTimeout(() => {
-                const msgElement = document.getElementById(chatMessage.id);
-                if (msgElement) {
-                    msgElement.remove();
-                }
-                delete chatMessages[chatMessage.id];
-            }, 10000);
-        }
-
-        function removeChatMessage(messageId, playerId) {
-            // Remove from Firestore
-            db.collection('chatMessages').doc(messageId).delete();
-            
-            // Remove from player's head
-            const playerElement = document.getElementById(`player-${playerId}`);
-            if (playerElement) {
-                const chatMessage = playerElement.querySelector('.chat-message');
-                if (chatMessage) {
-                    chatMessage.remove();
-                }
-            }
-            
-            // Clear timeout if exists
-            const timeoutId = chatMessages[`chat-${playerId}-${Date.now()}`];
-            if (timeoutId) {
-                clearTimeout(timeoutId);
-                delete chatMessages[`chat-${playerId}-${Date.now()}`];
-            }
         }
 
         // Initialize the game when page loads
